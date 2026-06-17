@@ -1,80 +1,12 @@
-use crate::backend::*;
+use super::App;
 
-pub struct App {
-    state: State,
-    backend: Backend,
-}
+use egui::Ui;
 
-#[derive(Default)]
-struct State {
-    containers: Vec<String>,
-
-    current_container: Option<String>,
-    current_blobs: Option<Vec<String>>,
-
-    displayed_blob: Option<Blob>,
-}
-
-struct Blob {
-    name: String,
-    container: String,
-    bytes: Vec<u8>,
-}
-
-#[derive(Debug)]
-pub enum Message {
-    Containers(Vec<String>),
-    Blobs {
-        container: String,
-        blobs: Vec<String>,
-    },
-    Blob {
-        name: String,
-        container: String,
-        bytes: Vec<u8>,
-    },
-}
-
-impl Default for App {
-    fn default() -> Self {
-        let backend = Backend::new();
-        backend.list_containers();
-
-        Self {
-            state: State::default(),
-            backend,
-        }
-    }
-}
-
-impl eframe::App for App {
-    // Runtime loop
-    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        // Poll for messages
-        while let Ok(msg) = self.backend.receiver.try_recv() {
-            println!("Handling message: {:?}", &msg);
-
-            match msg {
-                Message::Containers(names) => self.state.containers = names,
-                Message::Blobs { container, blobs } => {
-                    self.state.current_container = Some(container);
-                    self.state.current_blobs = Some(blobs);
-                }
-                Message::Blob {
-                    name,
-                    container,
-                    bytes,
-                } => {
-                    let blob = Blob {
-                        name,
-                        container,
-                        bytes,
-                    };
-
-                    self.state.displayed_blob = Some(blob);
-                }
-            }
-        }
+impl App {
+    pub fn render_main_screen(&self, ui: &mut Ui) {
+        let Some(backend) = &self.backend else {
+            unreachable!();
+        };
 
         egui::Panel::left("left_side_list")
             .min_size(150.0)
@@ -92,7 +24,7 @@ impl eframe::App for App {
                     .show(ui, |ui| {
                         for container in self.state.containers.iter() {
                             if ui.button(container).clicked() {
-                                self.backend.list_blobs(ui, container);
+                                backend.list_blobs(ui, container);
                             }
                         }
                     });
@@ -132,7 +64,7 @@ impl eframe::App for App {
                     .show(ui, |ui| {
                         for blob in blobs {
                             if ui.button(blob).clicked() {
-                                self.backend.fetch_blob(ui, container, blob);
+                                backend.fetch_blob(ui, container, blob);
                             };
                         }
                     });

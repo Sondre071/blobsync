@@ -4,7 +4,7 @@ use azure_storage_blob::BlobServiceClient;
 use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender, channel};
 
-mod credentials;
+pub mod credentials;
 mod fetch_containers;
 mod fetch_blobs;
 
@@ -17,11 +17,10 @@ pub struct Backend {
 }
 
 impl Backend {
-    pub fn new() -> Self {
+    pub fn new(account: &credentials::Account) -> Self {
         let (sender, receiver) = channel();
         let runtime = tokio::runtime::Runtime::new().unwrap();
-
-        let client = credentials::get_account_service_client();
+        let client = account.new_blob_client();
 
         Self {
             sender,
