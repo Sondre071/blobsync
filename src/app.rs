@@ -36,6 +36,14 @@ impl Default for App {
 impl eframe::App for App {
     // Runtime loop
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        // Poll for messages
+        while let Ok(msg) = self.backend.receiver.try_recv() {
+            match msg {
+                Message::Containers(names) => self.state.containers = names,
+                Message::Blobs { container, blobs } => {}
+            }
+        }
+
         egui::Panel::left("left_side_list")
             .min_size(150.0)
             .show_inside(ui, |ui| {
@@ -57,15 +65,5 @@ impl eframe::App for App {
                         }
                     });
             });
-
-        egui::CentralPanel::default().show_inside(ui, |ui| {
-            // Check incoming data
-            while let Ok(msg) = self.backend.receiver.try_recv() {
-                match msg {
-                    Message::Containers(names) => self.state.containers = names,
-                    Message::Blobs { container, blobs } => {}
-                }
-            }
-        });
     }
 }
