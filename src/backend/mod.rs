@@ -6,6 +6,7 @@ use std::sync::mpsc::{Receiver, Sender, channel};
 
 mod credentials;
 mod fetch_containers;
+mod fetch_blobs;
 
 pub struct Backend {
     runtime: tokio::runtime::Runtime,
