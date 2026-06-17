@@ -1,18 +1,18 @@
-use serde::Deserialize;
 use std::env;
 use std::fs;
 
-pub fn get_container_account() -> Result<StorageAccount, Box<dyn std::error::Error>> {
+pub fn get_container_account() -> Result<StorageAccount, ()> {
     let path = env::home_dir()
         .unwrap()
         .join("AppData/Local/BlobSync/connectionstring.txt");
 
-    let content = fs::read_to_string(path)?;
+    let content = fs::read_to_string(path).unwrap();
+    let storage_account = parse_connection_string(content);
 
-    Ok(parse_sas(content))
+    Ok(storage_account)
 }
 
-fn parse_sas(text: String) -> StorageAccount {
+fn parse_connection_string(text: String) -> StorageAccount {
     let mut blob_endpoint: Option<String> = None;
     let mut sas: Option<String> = None;
 
@@ -34,7 +34,6 @@ fn parse_sas(text: String) -> StorageAccount {
     }
 }
 
-#[derive(Deserialize)]
 pub struct StorageAccount {
     pub endpoint: String,
     pub sas: String,

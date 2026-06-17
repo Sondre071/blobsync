@@ -5,7 +5,9 @@ use azure_storage_blob::*;
 use futures::TryStreamExt;
 
 pub async fn list_containers() -> std::result::Result<Vec<String>, Box<dyn std::error::Error>> {
-    let account = shared::statics::get_container_account()?;
+    let account =
+        shared::utils::get_container_account().expect("Failed to fetch storage account secrets.");
+
     let service_url = Url::parse(&format!("{}?{}", account.endpoint, account.sas))?;
 
     let service_client = BlobServiceClient::new(service_url, None, None)?;
