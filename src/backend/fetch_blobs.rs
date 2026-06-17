@@ -32,3 +32,39 @@ impl Backend {
         });
     }
 }
+
+impl Backend {
+    pub fn fetch_blob(&self, container: &str, name: &str) {
+        let sender = self.sender.clone();
+        let client = Arc::clone(&self.client);
+        let container = container.to_string();
+        let name = name.to_string();
+        
+        println!("Fetching blob: {}, container: {}.", name, container);
+
+        self.runtime.spawn(async move {
+            let response = client
+                .blob_client(&container, &name)
+                .download(None)
+                .await
+                .unwrap();
+
+            let bytes: Vec<u8> = response
+                .body
+                .collect()
+                .await
+                .expect("Failed to parse blob bytes.")
+                .to_vec();
+            
+            println!("Parsed bytes.");
+
+            sender
+                .send(Message::Blob {
+                    name,
+                    container,
+                    bytes,
+                })
+                .expect("Failed to download blob.");
+        });
+    }
+}

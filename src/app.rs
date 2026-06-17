@@ -11,13 +11,27 @@ struct State {
 
     current_container: Option<String>,
     current_blobs: Option<Vec<String>>,
+
+    displayed_blob: Option<Blob>,
 }
 
+struct Blob {
+    name: String,
+    container: String,
+    bytes: Vec<u8>,
+}
+
+#[derive(Debug)]
 pub enum Message {
     Containers(Vec<String>),
     Blobs {
         container: String,
         blobs: Vec<String>,
+    },
+    Blob {
+        name: String,
+        container: String,
+        bytes: Vec<u8>,
     },
 }
 
@@ -38,11 +52,26 @@ impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         // Poll for messages
         while let Ok(msg) = self.backend.receiver.try_recv() {
+            println!("Handling message: {:?}", &msg);
+
             match msg {
                 Message::Containers(names) => self.state.containers = names,
                 Message::Blobs { container, blobs } => {
                     self.state.current_container = Some(container);
                     self.state.current_blobs = Some(blobs);
+                }
+                Message::Blob {
+                    name,
+                    container,
+                    bytes,
+                } => {
+                    let blob = Blob {
+                        name,
+                        container,
+                        bytes,
+                    };
+
+                    self.state.displayed_blob = Some(blob);
                 }
             }
         }
@@ -69,12 +98,21 @@ impl eframe::App for App {
                     });
             });
 
+        if let Some(blob) = &self.state.displayed_blob {
+            egui::Panel::right("preview_panel")
+                .max_size(600.0)
+                .show_inside(ui, |ui| {
+                    let uri = format!("bytes://{}/{}", blob.container, blob.name);
+                    ui.add(egui::Image::from_bytes(uri, blob.bytes.clone()));
+                });
+        }
+
         egui::CentralPanel::default().show_inside(ui, |ui| {
             if let (Some(container), Some(blobs)) =
                 (&self.state.current_container, &self.state.current_blobs)
             {
                 ui.add_sized(
-                    [ui.available_width(), 25.0],
+                    [200.0, 25.0],
                     egui::Label::new(egui::RichText::new(container).heading()),
                 );
 
@@ -84,7 +122,9 @@ impl eframe::App for App {
                     .auto_shrink(false)
                     .show(ui, |ui| {
                         for blob in blobs {
-                            ui.label(blob);
+                            if ui.button(blob).clicked() {
+                                self.backend.fetch_blob(container, blob);
+                            };
                         }
                     });
             }
