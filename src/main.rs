@@ -1,27 +1,24 @@
 mod shared;
 
-use azure_core::http::Url;
-use azure_storage_blob::*;
+use eframe;
+use egui;
 
-use futures::TryStreamExt;
+fn main() -> eframe::Result {
+    eframe::run_native("blobsync",
+        Default::default(),
+        Box::new(|_|
+            Ok(Box::<App>::default())
+        )
+    )
+}
 
-#[tokio::main]
-async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("Hello, world!");
+#[derive(Default)]
+struct App {
+    screen: usize,
+}
 
-    let account = shared::statics::get_container_account()?;
-    let service_url = Url::parse(&format!("{}?{}", account.endpoint, account.sas))?;
-    
-    let service_client = BlobServiceClient::new(service_url, None, None)?;
-    let mut pager = service_client.list_containers(None)?.into_pages();
+impl eframe::App for App {
+    fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {}
 
-    while let Some(page) = pager.try_next().await? {
-        let list = page.into_model()?;
-
-        for item in list.container_items {
-            println!("{}", item.name.unwrap());
-        }
-    }
-
-    Ok(())
+    fn ui(&mut self, ctx: &mut egui::Ui, _: &mut eframe::Frame) {}
 }
