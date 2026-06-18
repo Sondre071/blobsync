@@ -2,6 +2,7 @@
 
 mod app;
 mod backend;
+mod shared;
 
 fn main() -> eframe::Result {
     let options = eframe::NativeOptions {

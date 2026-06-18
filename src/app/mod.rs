@@ -1,21 +1,32 @@
 use crate::backend::Backend;
-use crate::backend::credentials::Account;
+use crate::shared::Shared;
+use crate::shared::account::Account;
 
 mod landing_screen;
 mod main_screen;
 mod runtime;
 
-#[derive(Default)]
 pub struct App {
-    state: State,
-    backend: Option<Backend>,
+    screen: Screen,
+    shared: Shared,
 }
 
-#[derive(Default)]
-struct State {
-    screen: Screen,
+impl Default for App {
+    fn default() -> Self {
+        Self {
+            screen: Screen::Landing,
+            shared: Shared::new(),
+        }
+    }
+}
 
-    accounts: Vec<Account>,
+enum Screen {
+    Landing,
+    Main(Box<MainState>),
+}
+
+struct MainState {
+    backend: Backend,
 
     containers: Vec<String>,
     current_container: Option<String>,
@@ -24,17 +35,19 @@ struct State {
     displayed_blob: Option<Blob>,
 }
 
-#[derive(Default)]
-enum Screen {
-    #[default]
-    Landing,
-    Main,
-}
+impl MainState {
+    fn new(account: &Account) -> Self {
+        let backend = Backend::connect(account);
+        backend.dispatch_fetch_containers_list_message();
 
-struct Blob {
-    name: String,
-    container: String,
-    bytes: Vec<u8>,
+        Self {
+            backend,
+            containers: Vec::<String>::new(),
+            current_container: None,
+            current_blobs: None,
+            displayed_blob: None,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -49,4 +62,10 @@ pub enum Message {
         container: String,
         bytes: Vec<u8>,
     },
+}
+
+struct Blob {
+    name: String,
+    container: String,
+    bytes: Vec<u8>,
 }

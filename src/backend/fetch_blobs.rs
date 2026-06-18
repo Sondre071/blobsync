@@ -1,11 +1,11 @@
 use super::{Backend, Message};
 
+use egui::Ui;
 use futures::TryStreamExt;
 use std::sync::Arc;
-use egui::Ui;
 
 impl Backend {
-    pub fn list_blobs(&self, ui: &Ui, container: &str) {
+    pub fn fetch_blobs_list(&self, ui: &Ui, container: &str) {
         let sender = self.sender.clone();
         let client = Arc::clone(&self.client);
         let container = container.to_string();
@@ -31,7 +31,7 @@ impl Backend {
             sender
                 .send(Message::Blobs { container, blobs })
                 .expect("Failed to fetch blobs.");
-            
+
             ctx.request_repaint();
         });
     }
@@ -44,7 +44,7 @@ impl Backend {
         let container = container.to_string();
         let name = name.to_string();
         let ctx = ui.ctx().clone();
-        
+
         println!("Fetching blob: {}, container: {}.", name, container);
 
         self.runtime.spawn(async move {
@@ -60,7 +60,7 @@ impl Backend {
                 .await
                 .expect("Failed to parse blob bytes.")
                 .to_vec();
-            
+
             println!("Parsed bytes.");
 
             sender
@@ -70,7 +70,7 @@ impl Backend {
                     bytes,
                 })
                 .expect("Failed to download blob.");
-            
+
             ctx.request_repaint();
         });
     }

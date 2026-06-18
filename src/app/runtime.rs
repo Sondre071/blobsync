@@ -1,39 +1,16 @@
-use super::{App, Blob, Message, Screen};
+use super::{App, Screen, landing_screen, main_screen};
 
 impl eframe::App for App {
-    // Runtime loop
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        // Poll for messages
-        if let Some(backend) = &self.backend {
-            while let Ok(msg) = backend.receiver.try_recv() {
-                println!("Handling message: {:?}", &msg);
+        match &mut self.screen {
+            Screen::Main(state) => main_screen::render_main_screen(ui, state),
+            Screen::Landing => {
+                let next_screen = landing_screen::render_landing_screen(ui, &mut self.shared);
 
-                match msg {
-                    Message::Containers(names) => self.state.containers = names,
-                    Message::Blobs { container, blobs } => {
-                        self.state.current_container = Some(container);
-                        self.state.current_blobs = Some(blobs);
-                    }
-                    Message::Blob {
-                        name,
-                        container,
-                        bytes,
-                    } => {
-                        let blob = Blob {
-                            name,
-                            container,
-                            bytes,
-                        };
-
-                        self.state.displayed_blob = Some(blob);
-                    }
+                if let Some(next_screen) = next_screen {
+                    self.screen = next_screen;
                 }
             }
-        }
-
-        match self.state.screen {
-            Screen::Main => self.render_main_screen(ui),
-            Screen::Landing => self.render_landing_screen(ui),
         }
     }
 }

@@ -1,21 +1,19 @@
-use super::App;
-use crate::backend::Backend;
-use crate::backend::credentials;
+use super::MainState;
+use super::Screen;
+use crate::shared::Shared;
 
 use egui::Ui;
 
-impl App {
-    pub fn render_landing_screen(&mut self, ui: &mut Ui) {
-        self.state.accounts = credentials::get_storage_accounts().expect("No credentials found.");
+pub fn render_landing_screen(ui: &mut Ui, shared: &mut Shared) -> Option<Screen> {
+    let mut next: Option<Screen> = None;
 
-        for account in &self.state.accounts {
-            if ui.button(&account.name).clicked() {
-                let backend = Backend::new(account);
-                backend.list_containers();
+    for account in &shared.accounts {
+        if ui.button(&account.name).clicked() {
+            let main_state = Box::new(MainState::new(account));
 
-                self.backend = Some(backend);
-                self.state.screen = super::Screen::Main;
-            }
+            next = Some(Screen::Main(main_state));
         }
     }
+
+    next
 }
