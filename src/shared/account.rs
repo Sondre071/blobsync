@@ -1,7 +1,6 @@
 use super::Shared;
 
-use std::env;
-use std::fs;
+use std::{env, fs};
 
 use azure_core::http::Url;
 use azure_storage_blob::BlobServiceClient;
@@ -16,14 +15,14 @@ impl Shared {
         let file = fs::File::open(path).unwrap();
         let reader = std::io::BufReader::new(file);
 
-        let account_file: AccountFile = serde_json::from_reader(reader).unwrap();
+        let accounts_file: AccountsFile = serde_json::from_reader(reader).unwrap();
 
-        account_file.accounts
+        accounts_file.accounts
     }
 }
 
 #[derive(Deserialize)]
-struct AccountFile {
+struct AccountsFile {
     accounts: Vec<Account>,
 }
 
