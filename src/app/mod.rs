@@ -2,6 +2,8 @@ use crate::backend::Backend;
 use crate::shared::Shared;
 use crate::shared::account::Account;
 
+use std::sync::Arc;
+
 mod landing_screen;
 mod main_screen;
 mod runtime;
@@ -42,7 +44,7 @@ impl MainState {
 
         Self {
             backend,
-            containers: Vec::<String>::new(),
+            containers: Vec::new(),
             current_container: None,
             current_blobs: None,
             displayed_blob: None,
@@ -67,5 +69,5 @@ pub enum Message {
 struct Blob {
     name: String,
     container: String,
-    bytes: Vec<u8>,
+    bytes: Arc<[u8]>,
 }

@@ -1,15 +1,15 @@
 use super::{Backend, Message};
 
-use egui::Ui;
+use egui::Context;
 use futures::TryStreamExt;
 use std::sync::Arc;
 
 impl Backend {
-    pub fn fetch_blobs_list(&self, ui: &Ui, container: &str) {
+    pub fn fetch_blobs_list(&self, ctx: &Context, container: &str) {
         let sender = self.sender.clone();
         let client = Arc::clone(&self.client);
-        let container = container.to_string();
-        let ctx = ui.ctx().clone();
+        let container = container.to_owned();
+        let ctx = ctx.clone();
 
         self.runtime.spawn(async move {
             let mut pager = client
@@ -35,15 +35,13 @@ impl Backend {
             ctx.request_repaint();
         });
     }
-}
-
-impl Backend {
-    pub fn fetch_blob(&self, ui: &Ui, container: &str, name: &str) {
+    
+    pub fn fetch_blob(&self, ctx: &Context, container: &str, name: &str) {
         let sender = self.sender.clone();
         let client = Arc::clone(&self.client);
-        let container = container.to_string();
-        let name = name.to_string();
-        let ctx = ui.ctx().clone();
+        let container = container.to_owned();
+        let name = name.to_owned();
+        let ctx = ctx.clone();
 
         println!("Fetching blob: {}, container: {}.", name, container);
 

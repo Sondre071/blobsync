@@ -1,5 +1,7 @@
 use super::{Blob, MainState, Message};
 
+use std::sync::Arc;
+
 use egui::Ui;
 
 pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
@@ -21,7 +23,7 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
                 let blob = Blob {
                     name,
                     container,
-                    bytes,
+                    bytes: bytes.into(),
                 };
 
                 state.displayed_blob = Some(blob);
@@ -45,7 +47,7 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
                 .show(ui, |ui| {
                     for container in state.containers.iter() {
                         if ui.button(container).clicked() {
-                            state.backend.fetch_blobs_list(ui, container);
+                            state.backend.fetch_blobs_list(ui.ctx(), container);
                         }
                     }
                 });
@@ -55,7 +57,7 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
         let max_width = (ui.available_width() - 460.0).max(0.0);
 
         let uri = format!("bytes://{}/{}", blob.container, blob.name);
-        let image = egui::Image::from_bytes(uri, blob.bytes.clone());
+        let image = egui::Image::from_bytes(uri, Arc::clone(&blob.bytes));
 
         let desired_size = image
             .load_and_calc_size(ui, egui::vec2(max_width, ui.available_height()))
@@ -83,7 +85,7 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
                 .show(ui, |ui| {
                     for blob in blobs {
                         if ui.button(blob).clicked() {
-                            state.backend.fetch_blob(ui, container, blob);
+                            state.backend.fetch_blob(ui.ctx(), container, blob);
                         };
                     }
                 });
