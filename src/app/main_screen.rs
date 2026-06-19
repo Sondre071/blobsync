@@ -12,21 +12,30 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
         match msg {
             Message::Containers(names) => state.containers = names,
             Message::Blobs { container, blobs } => {
-                state.current_container = Some(container);
-                state.current_blobs = Some(blobs);
+                if state
+                    .current_container
+                    .as_ref()
+                    .is_some_and(|c| c.as_str() == container)
+                {
+                    state.current_blobs = Some(blobs);
+                }
             }
             Message::Blob {
                 name,
                 container,
                 bytes,
             } => {
-                let blob = Blob {
-                    name,
-                    container,
-                    bytes: bytes.into(),
-                };
-
-                state.displayed_blob = Some(blob);
+                state.displayed_blob = Some(Blob::new(name, container, bytes));
+            }
+            Message::HashedFile {
+                name,
+                container,
+                digest,
+            } => {
+                println!("Received hash for file: {}/{}", container, name);
+                state
+                    .hashes
+                    .insert(format!("{}/{}", container, name), digest.0);
             }
         }
     }
@@ -48,6 +57,10 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
                     for container in state.containers.iter() {
                         if ui.button(container).clicked() {
                             state.backend.fetch_blobs_list(ui.ctx(), container);
+                            state.current_container = Some(container.clone());
+                            state
+                                .backend
+                                .dispatch_local_files_indexing(ui.ctx(), container);
                         }
                     }
                 });

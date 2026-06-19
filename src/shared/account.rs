@@ -26,9 +26,10 @@ struct AccountsFile {
     accounts: Vec<Account>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct Account {
     pub name: String,
+    pub local_path: String,
     blob_endpoint: String,
     sas: String,
 }

@@ -2,6 +2,7 @@ use crate::backend::Backend;
 use crate::shared::Shared;
 use crate::shared::account::Account;
 
+use std::collections::HashMap;
 use std::sync::Arc;
 
 mod landing_screen;
@@ -35,6 +36,8 @@ struct MainState {
     current_blobs: Option<Vec<String>>,
 
     displayed_blob: Option<Blob>,
+
+    hashes: HashMap<String, [u8; 16]>,
 }
 
 impl MainState {
@@ -48,6 +51,7 @@ impl MainState {
             current_container: None,
             current_blobs: None,
             displayed_blob: None,
+            hashes: HashMap::new(),
         }
     }
 }
@@ -64,10 +68,27 @@ pub enum Message {
         container: String,
         bytes: Vec<u8>,
     },
+    HashedFile {
+        name: String,
+        container: Arc<str>,
+        digest: md5::Digest,
+    },
 }
 
 struct Blob {
     name: String,
     container: String,
-    bytes: Arc<[u8]>,
+    pub bytes: Arc<[u8]>,
+    pub md5: Option<[u8; 16]>,
+}
+
+impl Blob {
+    pub fn new(name: String, container: String, bytes: Vec<u8>) -> Self {
+        Self {
+            name,
+            container,
+            bytes: bytes.into(),
+            md5: None,
+        }
+    }
 }
