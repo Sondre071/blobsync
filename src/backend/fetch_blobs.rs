@@ -1,11 +1,12 @@
 use super::{Backend, Message};
+use crate::app::Blob;
 
 use egui::Context;
 use futures::TryStreamExt;
 use std::sync::Arc;
 
 impl Backend {
-    pub fn fetch_blobs_list(&self, ctx: &Context, container: &str) {
+    pub(super) fn fetch_container(&self, ctx: &Context, container: &str) {
         let sender = self.sender.clone();
         let client = Arc::clone(&self.client);
         let container = container.to_owned();
@@ -18,13 +19,23 @@ impl Backend {
                 .unwrap()
                 .into_pages();
 
-            let mut blobs = Vec::<String>::new();
+            let mut blobs = Vec::<Blob>::new();
 
             while let Some(page) = pager.try_next().await.unwrap() {
                 let list = page.into_model().unwrap();
 
                 for item in list.blob_items {
-                    blobs.push(item.name.unwrap());
+                    let name = item.name.unwrap();
+                    let content_md5: [u8; 16] = item
+                        .properties
+                        .unwrap()
+                        .content_md5
+                        .expect("No-md5 hash found for the file.")
+                        .try_into()
+                        .expect("Failed to parse md5-hash into 16-byte uint.");
+
+                    let blob = Blob::new(name, None, content_md5);
+                    blobs.push(blob);
                 }
             }
 
@@ -35,7 +46,7 @@ impl Backend {
             ctx.request_repaint();
         });
     }
-    
+
     pub fn fetch_blob(&self, ctx: &Context, container: &str, name: &str) {
         let sender = self.sender.clone();
         let client = Arc::clone(&self.client);
@@ -59,14 +70,15 @@ impl Backend {
                 .expect("Failed to parse blob bytes.")
                 .to_vec();
 
-            println!("Parsed bytes.");
+            let md5: [u8; 16] = response
+                .properties
+                .blob_content_md5
+                .expect("No md5-hash found for the file.")
+                .try_into()
+                .expect("Failed to parse md5-hash into 16-byte uint.");
 
             sender
-                .send(Message::Blob {
-                    name,
-                    container,
-                    bytes,
-                })
+                .send(Message::BlobBytes { name, bytes, md5 })
                 .expect("Failed to download blob.");
 
             ctx.request_repaint();

@@ -5,6 +5,8 @@ use azure_storage_blob::BlobServiceClient;
 use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender, channel};
 
+use egui::Context;
+
 mod fetch_blobs;
 mod fetch_containers;
 mod hashing;
@@ -31,5 +33,9 @@ impl Backend {
             account: account.clone(),
             client: Arc::new(client),
         }
+    }
+    
+    pub fn switch_to_container(&self, ctx: &Context, container: &str) {
+        self.fetch_container(ctx, container);
     }
 }

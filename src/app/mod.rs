@@ -2,7 +2,7 @@ use crate::backend::Backend;
 use crate::shared::Shared;
 use crate::shared::account::Account;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 mod landing_screen;
@@ -32,26 +32,28 @@ struct MainState {
     backend: Backend,
 
     containers: Vec<String>,
-    current_container: Option<String>,
-    current_blobs: Option<Vec<String>>,
+    current_container: Option<CurrentContainer>,
 
     displayed_blob: Option<Blob>,
 
-    hashes: HashMap<String, [u8; 16]>,
+    blob_hashes: HashMap<String, HashSet<[u8; 16]>>,
+}
+
+struct CurrentContainer {
+    name: String,
+    blobs: Vec<Blob>
 }
 
 impl MainState {
     fn new(account: &Account) -> Self {
         let backend = Backend::connect(account);
-        backend.dispatch_fetch_containers_list_message();
 
         Self {
             backend,
             containers: Vec::new(),
             current_container: None,
-            current_blobs: None,
             displayed_blob: None,
-            hashes: HashMap::new(),
+            blob_hashes: HashMap::new(),
         }
     }
 }
@@ -61,34 +63,32 @@ pub enum Message {
     Containers(Vec<String>),
     Blobs {
         container: String,
-        blobs: Vec<String>,
+        blobs: Vec<Blob>,
     },
-    Blob {
+    BlobBytes {
         name: String,
-        container: String,
         bytes: Vec<u8>,
+        md5: [u8; 16],
     },
     HashedFile {
         name: String,
-        container: Arc<str>,
         digest: md5::Digest,
     },
 }
 
-struct Blob {
+#[derive(Debug)]
+pub struct Blob {
     name: String,
-    container: String,
-    pub bytes: Arc<[u8]>,
-    pub md5: Option<[u8; 16]>,
+    pub bytes: Option<Arc<[u8]>>,
+    pub md5: [u8; 16],
 }
 
 impl Blob {
-    pub fn new(name: String, container: String, bytes: Vec<u8>) -> Self {
+    pub fn new(name: String, bytes: Option<Vec<u8>>, md5: [u8; 16]) -> Self {
         Self {
             name,
-            container,
-            bytes: bytes.into(),
-            md5: None,
+            bytes: bytes.map(Arc::from),
+            md5,
         }
     }
 }
