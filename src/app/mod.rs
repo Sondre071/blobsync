@@ -67,6 +67,7 @@ pub enum Message {
     },
     BlobBytes {
         name: String,
+        length: u64,
         bytes: Vec<u8>,
         md5: [u8; 16],
     },
@@ -79,14 +80,16 @@ pub enum Message {
 #[derive(Debug)]
 pub struct Blob {
     name: String,
+    length: u64,
     pub bytes: Option<Arc<[u8]>>,
     pub md5: [u8; 16],
 }
 
 impl Blob {
-    pub fn new(name: String, bytes: Option<Vec<u8>>, md5: [u8; 16]) -> Self {
+    pub fn new(name: String, length: u64, bytes: Option<Vec<u8>>, md5: [u8; 16]) -> Self {
         Self {
             name,
+            length,
             bytes: bytes.map(Arc::from),
             md5,
         }

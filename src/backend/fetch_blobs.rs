@@ -26,15 +26,24 @@ impl Backend {
 
                 for item in list.blob_items {
                     let name = item.name.unwrap();
-                    let content_md5: [u8; 16] = item
-                        .properties
-                        .unwrap()
+
+                    let Some(properties) = item.properties else {
+                        println!("Blob properties was None.");
+
+                        continue;
+                    };
+
+                    let length = properties
+                        .content_length
+                        .expect("Unable to get content length.");
+
+                    let content_md5: [u8; 16] = properties
                         .content_md5
                         .expect("No-md5 hash found for the file.")
                         .try_into()
                         .expect("Failed to parse md5-hash into 16-byte uint.");
 
-                    let blob = Blob::new(name, None, content_md5);
+                    let blob = Blob::new(name, length, None, content_md5);
                     blobs.push(blob);
                 }
             }
@@ -77,8 +86,15 @@ impl Backend {
                 .try_into()
                 .expect("Failed to parse md5-hash into 16-byte uint.");
 
+            let length = bytes.len() as u64;
+
             sender
-                .send(Message::BlobBytes { name, bytes, md5 })
+                .send(Message::BlobBytes {
+                    name,
+                    length,
+                    bytes,
+                    md5,
+                })
                 .expect("Failed to download blob.");
 
             ctx.request_repaint();

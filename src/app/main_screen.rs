@@ -26,16 +26,13 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
                     blobs,
                 });
             }
-            Message::BlobBytes { name, bytes, md5 } => {
+            Message::BlobBytes { name, length, bytes, md5 } => {
                 println!("Handling message: BlobBytes");
                 println!("File: {}", name);
 
-                state.displayed_blob = Some(Blob::new(name, Some(bytes), md5));
+                state.displayed_blob = Some(Blob::new(name, length, Some(bytes), md5));
             }
-            Message::HashedFile {
-                name,
-                digest,
-            } => {
+            Message::HashedFile { name, digest } => {
                 println!("Handling message HashedFile");
                 println!("File: {}", name);
 
@@ -114,19 +111,43 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
             egui::ScrollArea::vertical()
                 .auto_shrink(false)
                 .show(ui, |ui| {
-                    for blob in &container.blobs {
-                        ui.horizontal(|ui| {
-                            if ui.button(&blob.name).clicked() {
+                    egui::Grid::new("blob_table")
+                        .striped(true)
+                        .spacing(egui::Vec2::new(10.0, 8.0))
+                        .show(ui, |ui| {
+                        ui.label("Name");
+                        
+                        //egui::Label::new(egui::RichText::new("Name2").
+                        
+                        ui.label("Status");
+                        ui.label("Size");
+                        ui.label("");
+                        
+                        ui.end_row();
+
+                        for blob in &container.blobs {
+                            let name = &blob.name[..blob.name.len().min(30)];
+                            
+                            ui.label(name);
+
+                            let status = if hashset.is_some_and(|h| h.contains(&blob.md5)) {
+                                "Indexed"
+                            } else {
+                                "In Azure"
+                            };
+
+                            ui.label(status);
+                            ui.label(format!("{} kb", &blob.length / 1024));
+
+                            if ui.button("View").clicked() {
                                 state
                                     .backend
                                     .fetch_blob(ui.ctx(), &container.name, &blob.name);
                             };
 
-                            if hashset.is_some_and(|h| h.contains(&blob.md5)) {
-                                ui.label("hashed!");
-                            }
-                        });
-                    }
+                            ui.end_row();
+                        }
+                    });
                 });
         }
     });
