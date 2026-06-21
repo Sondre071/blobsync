@@ -1,4 +1,5 @@
 use super::{Blob, CurrentContainer, MainState, Message};
+use crate::shared;
 
 use egui_extras::{Column, TableBuilder};
 use std::sync::Arc;
@@ -10,13 +11,17 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
     while let Ok(msg) = state.backend.receiver.try_recv() {
         match msg {
             Message::Containers(containers) => {
-                println!("Handling message: Containers");
+                shared::println!("%mMessage received: %nContainers");
 
                 state.containers = containers;
             }
             Message::Blobs { container, blobs } => {
-                println!("Handling message: Blobs");
-                println!("Container: {}, file count: {}", container, blobs.len());
+                shared::println!("%mMessage received: %nBlobs");
+                shared::println!(
+                    "%tContainer: %n{}%t, file count: %d{}",
+                    container,
+                    blobs.len()
+                );
 
                 state
                     .backend
@@ -33,32 +38,32 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
                 bytes,
                 md5,
             } => {
-                println!("Handling message: BlobBytes");
-                println!("File: {}", name);
+                shared::println!("%mMessage received: %nBlobBytes");
+                shared::println!("%tFile: %n{}", name);
 
                 state.displayed_blob = Some(Blob::new(name, length, Some(bytes), md5));
             }
             Message::HashedFile { name, digest } => {
-                println!("Handling message HashedFile");
-                println!("File: {}", name);
+                shared::println!("%mMessage received: %nHashedFile");
+                shared::println!("%tFile: %n{}", name);
 
-                let Some(current_container) = &state.current_container else {
-                    println!("No container is selected. Disregarding this hash.");
-
-                    return;
-                };
-
-                if let Some(hashset) = state.blob_hashes.get_mut(&current_container.name) {
-                    hashset.insert(digest.0);
+                if let Some(current_container) = &state.current_container {
+                    if let Some(hashset) = state.blob_hashes.get_mut(&current_container.name) {
+                        hashset.insert(digest.0);
+                    } else {
+                        state
+                            .blob_hashes
+                            .entry(current_container.name.clone())
+                            .or_default()
+                            .insert(digest.0);
+                    }
                 } else {
-                    state
-                        .blob_hashes
-                        .entry(current_container.name.clone())
-                        .or_default()
-                        .insert(digest.0);
-                }
+                    shared::println!("%wNo container is selected. Disregarding this hash.");
+                };
             }
         }
+
+        println!();
     }
 
     egui::Panel::left("left_side_list")

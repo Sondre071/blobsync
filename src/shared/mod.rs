@@ -1,5 +1,8 @@
 pub mod account;
 
+pub mod print;
+pub use crate::println;
+
 pub struct Shared {
     pub accounts: Vec<account::Account>,
 }

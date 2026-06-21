@@ -1,5 +1,6 @@
 use super::{Backend, Message};
 use crate::app::Blob;
+use crate::shared;
 
 use egui::Context;
 use futures::TryStreamExt;
@@ -63,7 +64,7 @@ impl Backend {
         let name = name.to_owned();
         let ctx = ctx.clone();
 
-        println!("Fetching blob: {}, container: {}.", name, container);
+        shared::println!("%tFetching blob: %n{}/{}\n", container, name);
 
         self.runtime.spawn(async move {
             let response = client

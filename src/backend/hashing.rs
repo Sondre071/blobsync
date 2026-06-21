@@ -1,4 +1,5 @@
 use super::{Backend, Message};
+use crate::shared;
 
 use egui::Context;
 use std::path::Path;
@@ -12,11 +13,11 @@ impl Backend {
         let ctx = ctx.clone();
 
         if root.try_exists().is_err() {
-            println!(
-                "No local folder found for container: '{}', returning.",
+            shared::println!(
+                "%tNo local folder found for container: '%n{}%t', returning.",
                 local_container_name
             );
-            
+
             return;
         }
 
@@ -26,18 +27,14 @@ impl Backend {
                 .filter_map(Result::ok)
                 .filter(|e| e.file_type().is_file())
             {
-                let bytes = std::fs::read(file.path())
-                    .expect("Unable to read file.");
+                let bytes = std::fs::read(file.path()).expect("Unable to read file.");
 
                 let name = file.file_name().to_string_lossy().to_string();
 
                 let digest = md5::compute(bytes);
 
                 sender
-                    .send(Message::HashedFile {
-                        name,
-                        digest,
-                    })
+                    .send(Message::HashedFile { name, digest })
                     .expect("Failed to hash file.");
 
                 ctx.request_repaint();

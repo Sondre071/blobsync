@@ -1,4 +1,5 @@
 use super::Shared;
+use crate::shared;
 
 use std::{env, fs};
 
@@ -39,7 +40,7 @@ impl Account {
         let url = Url::parse(&format!("{}?{}", self.blob_endpoint, self.sas))
             .expect("Unable to parse URL.");
 
-        println!("Creating new client for storage account: {}", self.name);
+        shared::println!("%tCreating new client for storage account: %n{}\n", self.name);
 
         BlobServiceClient::new(url, None, None).expect("Unable to create blob service client.")
     }
