@@ -1,5 +1,6 @@
 use super::{Blob, CurrentContainer, MainState, Message};
 
+use egui_extras::{Column, TableBuilder};
 use std::sync::Arc;
 
 use egui::Ui;
@@ -26,7 +27,12 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
                     blobs,
                 });
             }
-            Message::BlobBytes { name, length, bytes, md5 } => {
+            Message::BlobBytes {
+                name,
+                length,
+                bytes,
+                md5,
+            } => {
                 println!("Handling message: BlobBytes");
                 println!("File: {}", name);
 
@@ -108,47 +114,70 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
 
             let hashset = state.blob_hashes.get(&container.name);
 
-            egui::ScrollArea::vertical()
-                .auto_shrink(false)
-                .show(ui, |ui| {
-                    egui::Grid::new("blob_table")
-                        .striped(true)
-                        .spacing(egui::Vec2::new(10.0, 8.0))
-                        .show(ui, |ui| {
+            TableBuilder::new(ui)
+                .column(Column::initial(240.0))
+                .column(Column::initial(60.0))
+                .column(Column::initial(70.0))
+                .column(Column::auto())
+                .striped(true)
+                .header(20.0, |mut header| {
+                    header.col(|ui| {
                         ui.label("Name");
-                        
-                        //egui::Label::new(egui::RichText::new("Name2").
-                        
+                    });
+
+                    header.col(|ui| {
                         ui.label("Status");
+                    });
+
+                    header.col(|ui| {
                         ui.label("Size");
-                        ui.label("");
-                        
-                        ui.end_row();
+                    });
+                })
+                .body(|body| {
+                    body.rows(16.0, container.blobs.len(), |mut row| {
+                        let blob = &container.blobs[row.index()];
+                        let name = &blob.name[..blob.name.len().min(30)];
+                        let status = if hashset.is_some_and(|h| h.contains(&blob.md5)) {
+                            "Indexed"
+                        } else {
+                            "In Azure"
+                        };
+                        let length = format!("{} kb", &blob.length / 1024);
 
-                        for blob in &container.blobs {
-                            let name = &blob.name[..blob.name.len().min(30)];
-                            
+                        row.col(|ui| {
                             ui.label(name);
+                        });
 
-                            let status = if hashset.is_some_and(|h| h.contains(&blob.md5)) {
-                                "Indexed"
-                            } else {
-                                "In Azure"
-                            };
-
+                        row.col(|ui| {
                             ui.label(status);
-                            ui.label(format!("{} kb", &blob.length / 1024));
+                        });
 
+                        row.col(|ui| {
+                            ui.label(length);
+                        });
+
+                        row.col(|ui| {
                             if ui.button("View").clicked() {
                                 state
                                     .backend
                                     .fetch_blob(ui.ctx(), &container.name, &blob.name);
                             };
-
-                            ui.end_row();
-                        }
-                    });
+                        });
+                    })
                 });
+
+            if false {
+                egui::ScrollArea::vertical()
+                    .auto_shrink(false)
+                    .show(ui, |ui| {
+                        egui::Grid::new("blob_table")
+                            .striped(true)
+                            .spacing(egui::Vec2::new(10.0, 8.0))
+                            .show(ui, |ui| {
+                                ui.end_row();
+                            });
+                    });
+            }
         }
     });
 }
