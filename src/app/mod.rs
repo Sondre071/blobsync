@@ -41,7 +41,7 @@ struct MainState {
 
 struct CurrentContainer {
     name: String,
-    blobs: Vec<Blob>
+    blobs: Vec<Blob>,
 }
 
 impl MainState {
@@ -61,20 +61,9 @@ impl MainState {
 #[derive(Debug)]
 pub enum Message {
     Containers(Vec<String>),
-    Blobs {
-        container: String,
-        blobs: Vec<Blob>,
-    },
-    BlobBytes {
-        name: String,
-        length: u64,
-        bytes: Vec<u8>,
-        md5: [u8; 16],
-    },
-    HashedFile {
-        name: String,
-        digest: md5::Digest,
-    },
+    Blobs { container: String, blobs: Vec<Blob> },
+    BlobWithBytes(Blob),
+    HashedFile { name: String, digest: md5::Digest },
 }
 
 #[derive(Debug)]
@@ -83,15 +72,29 @@ pub struct Blob {
     length: u64,
     pub bytes: Option<Arc<[u8]>>,
     pub md5: [u8; 16],
+    pub location: Location,
+}
+
+#[derive(Debug)]
+pub enum Location {
+    Azure,
+    Local,
 }
 
 impl Blob {
-    pub fn new(name: String, length: u64, bytes: Option<Vec<u8>>, md5: [u8; 16]) -> Self {
+    pub fn new(
+        name: String,
+        length: u64,
+        bytes: Option<Vec<u8>>,
+        md5: [u8; 16],
+        location: Location,
+    ) -> Self {
         Self {
             name,
             length,
             bytes: bytes.map(Arc::from),
             md5,
+            location,
         }
     }
 }

@@ -34,7 +34,7 @@ impl Backend {
             client: Arc::new(client),
         }
     }
-    
+
     pub fn switch_to_container(&self, ctx: &Context, container: &str) {
         self.fetch_container(ctx, container);
     }

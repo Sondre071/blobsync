@@ -1,5 +1,5 @@
 use super::{Backend, Message};
-use crate::app::Blob;
+use crate::app::{Blob, Location};
 use crate::shared;
 
 use egui::Context;
@@ -40,11 +40,11 @@ impl Backend {
 
                     let content_md5: [u8; 16] = properties
                         .content_md5
-                        .expect("No-md5 hash found for the file.")
+                        .expect("No md5-hash found for the file.")
                         .try_into()
                         .expect("Failed to parse md5-hash into 16-byte uint.");
 
-                    let blob = Blob::new(name, length, None, content_md5);
+                    let blob = Blob::new(name, length, None, content_md5, Location::Azure);
                     blobs.push(blob);
                 }
             }
@@ -89,13 +89,10 @@ impl Backend {
 
             let length = bytes.len() as u64;
 
+            let blob = Blob::new(name, length, Some(bytes), md5, Location::Azure);
+
             sender
-                .send(Message::BlobBytes {
-                    name,
-                    length,
-                    bytes,
-                    md5,
-                })
+                .send(Message::BlobWithBytes(blob))
                 .expect("Failed to download blob.");
 
             ctx.request_repaint();

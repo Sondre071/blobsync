@@ -1,4 +1,4 @@
-use super::{Blob, CurrentContainer, MainState, Message};
+use super::{CurrentContainer, MainState, Message};
 use crate::shared;
 
 use egui_extras::{Column, TableBuilder};
@@ -32,16 +32,11 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
                     blobs,
                 });
             }
-            Message::BlobBytes {
-                name,
-                length,
-                bytes,
-                md5,
-            } => {
+            Message::BlobWithBytes(blob) => {
                 shared::println!("%mMessage received: %nBlobBytes");
-                shared::println!("%tFile: %n{}", name);
+                shared::println!("%tFile: %n{}", blob.name);
 
-                state.displayed_blob = Some(Blob::new(name, length, Some(bytes), md5));
+                state.displayed_blob = Some(blob);
             }
             Message::HashedFile { name, digest } => {
                 shared::println!("%mMessage received: %nHashedFile");

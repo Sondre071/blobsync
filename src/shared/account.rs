@@ -40,7 +40,10 @@ impl Account {
         let url = Url::parse(&format!("{}?{}", self.blob_endpoint, self.sas))
             .expect("Unable to parse URL.");
 
-        shared::println!("%tCreating new client for storage account: %n{}\n", self.name);
+        shared::println!(
+            "%tCreating new client for storage account: %n{}\n",
+            self.name
+        );
 
         BlobServiceClient::new(url, None, None).expect("Unable to create blob service client.")
     }
