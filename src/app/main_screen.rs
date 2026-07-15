@@ -9,12 +9,16 @@ mod polling;
 pub fn run_main_screen(ui: &mut Ui, state: &mut MainState) {
     polling::poll_for_messages(state);
 
+    let heading_height = ui.text_style_height(&egui::TextStyle::Heading);
+    let row_height = ui.text_style_height(&egui::TextStyle::Body) + 4.0;
+
     egui::Panel::left("left_side_list")
         .min_size(150.0)
+        .resizable(true)
         .show_inside(ui, |ui| {
             ui.add_space(5.0);
             ui.add_sized(
-                [ui.available_width(), 25.0],
+                [ui.available_width(), heading_height],
                 egui::Label::new(egui::RichText::new("Containers").heading()),
             );
 
@@ -40,7 +44,7 @@ pub fn run_main_screen(ui: &mut Ui, state: &mut MainState) {
         (&state.displayed_blob, &state.current_container)
         && let Some(bytes) = &blob.bytes
     {
-        let max_width = (ui.available_width() - 460.0).max(0.0);
+        let max_width = (ui.available_width() * 0.4).max(0.0);
 
         let uri = format!("bytes://{}/{}", container.name, blob.name);
         let image = egui::Image::from_bytes(uri, Arc::clone(bytes));
@@ -54,7 +58,9 @@ pub fn run_main_screen(ui: &mut Ui, state: &mut MainState) {
             .unwrap_or(max_width);
 
         egui::Panel::right("preview_panel")
-            .exact_size(desired_size)
+            .resizable(true)
+            .default_size(desired_size)
+            .size_range(100.0..=max_width.max(100.0))
             .show_inside(ui, |ui| {
                 ui.add(image);
             });
@@ -63,7 +69,7 @@ pub fn run_main_screen(ui: &mut Ui, state: &mut MainState) {
     egui::CentralPanel::default().show_inside(ui, |ui| {
         if let Some(container) = &state.current_container {
             ui.add_sized(
-                [200.0, 25.0],
+                [ui.available_width(), heading_height],
                 egui::Label::new(
                     egui::RichText::new(&container.name).heading(),
                 ),
@@ -72,12 +78,12 @@ pub fn run_main_screen(ui: &mut Ui, state: &mut MainState) {
             ui.separator();
 
             TableBuilder::new(ui)
-                .column(Column::initial(240.0))
-                .column(Column::initial(60.0))
-                .column(Column::initial(70.0))
-                .column(Column::auto())
+                .column(Column::remainder().at_least(120.0))
+                .column(Column::auto().at_least(60.0))
+                .column(Column::auto().at_least(60.0))
+                .column(Column::auto().at_least(50.0))
                 .striped(true)
-                .header(20.0, |mut header| {
+                .header(heading_height * 0.8, |mut header| {
                     header.col(|ui| {
                         ui.label("Name");
                     });
@@ -91,9 +97,11 @@ pub fn run_main_screen(ui: &mut Ui, state: &mut MainState) {
                     });
                 })
                 .body(|body| {
-                    body.rows(16.0, container.blobs.len(), |mut row| {
+                    body.rows(row_height, container.blobs.len(), |mut row| {
                         let blob = &container.blobs[row.index()];
-                        let name = &blob.name[..blob.name.len().min(30)];
+                        
+                        let name: String = blob.name.chars().take(30).collect();
+                        
                         let status = match blob.location {
                             Location::Remote => "Remote",
                             Location::Local => "Local",
@@ -103,7 +111,7 @@ pub fn run_main_screen(ui: &mut Ui, state: &mut MainState) {
                         let length = format!("{} kb", &blob.length / 1024);
 
                         row.col(|ui| {
-                            ui.label(name);
+                            ui.label(&blob.name);
                         });
 
                         row.col(|ui| {
@@ -125,20 +133,6 @@ pub fn run_main_screen(ui: &mut Ui, state: &mut MainState) {
                         });
                     })
                 });
-
-            if false {
-                egui::ScrollArea::vertical().auto_shrink(false).show(
-                    ui,
-                    |ui| {
-                        egui::Grid::new("blob_table")
-                            .striped(true)
-                            .spacing(egui::Vec2::new(10.0, 8.0))
-                            .show(ui, |ui| {
-                                ui.end_row();
-                            });
-                    },
-                );
-            }
         }
     });
 }

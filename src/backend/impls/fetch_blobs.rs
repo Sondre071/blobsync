@@ -151,7 +151,7 @@ impl Backend {
 
         self.runtime.spawn(async move {
             shared::println!(
-                "%tBlob location: %n{}",
+                "%tLocation status: %n{}",
                 blob.location
             );
 
