@@ -42,7 +42,7 @@ impl Account {
             .expect("Unable to parse URL.");
 
         shared::println!(
-            "%tCreating new client for storage account: %n{}\n",
+            "%tInitializing new client for storage account: %n{}\n",
             self.name
         );
 

@@ -1,4 +1,5 @@
 use crate::backend::Backend;
+use crate::shared;
 use crate::shared::Shared;
 use crate::shared::account::Account;
 
@@ -66,6 +67,11 @@ impl MainState {
         self.backend.dispatch_fetch_local_blobs(
             ctx,
             self.current_container.as_ref().unwrap(),
+        );
+
+        shared::println!(
+            "%tCurrent container set to: %n{}\n",
+            container.as_ref()
         );
     }
 }
