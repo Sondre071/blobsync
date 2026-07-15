@@ -1,4 +1,4 @@
-use super::{CurrentContainer, MainState, Message};
+use super::{CurrentContainer, Location, MainState, Message};
 use crate::shared;
 
 use egui_extras::{Column, TableBuilder};
@@ -23,38 +23,22 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
                     blobs.len()
                 );
 
-                state
-                    .backend
-                    .dispatch_local_files_indexing(ui.ctx(), &container);
-
-                state.current_container = Some(CurrentContainer {
-                    name: container,
-                    blobs,
-                });
+                if let Some(current_container) = &mut state.current_container
+                    && current_container.name == container
+                {
+                    current_container.insert_new_blobs(blobs);
+                } else {
+                    state.current_container = Some(CurrentContainer {
+                        name: container,
+                        blobs,
+                    });
+                }
             }
             Message::BlobWithBytes(blob) => {
                 shared::println!("%mMessage received: %nBlobBytes");
                 shared::println!("%tFile: %n{}", blob.name);
 
                 state.displayed_blob = Some(blob);
-            }
-            Message::HashedFile { name, digest } => {
-                shared::println!("%mMessage received: %nHashedFile");
-                shared::println!("%tFile: %n{}", name);
-
-                if let Some(current_container) = &state.current_container {
-                    if let Some(hashset) = state.blob_hashes.get_mut(&current_container.name) {
-                        hashset.insert(digest.0);
-                    } else {
-                        state
-                            .blob_hashes
-                            .entry(current_container.name.clone())
-                            .or_default()
-                            .insert(digest.0);
-                    }
-                } else {
-                    shared::println!("%wNo container is selected. Disregarding this hash.");
-                };
             }
         }
 
@@ -112,8 +96,6 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
 
             ui.separator();
 
-            let hashset = state.blob_hashes.get(&container.name);
-
             TableBuilder::new(ui)
                 .column(Column::initial(240.0))
                 .column(Column::initial(60.0))
@@ -137,11 +119,12 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
                     body.rows(16.0, container.blobs.len(), |mut row| {
                         let blob = &container.blobs[row.index()];
                         let name = &blob.name[..blob.name.len().min(30)];
-                        let status = if hashset.is_some_and(|h| h.contains(&blob.md5)) {
-                            "Indexed"
-                        } else {
-                            "In Azure"
+                        let status = match blob.location {
+                            Location::Remote => "Remote",
+                            Location::Local => "Local",
+                            Location::Synced => "Synced",
                         };
+
                         let length = format!("{} kb", &blob.length / 1024);
 
                         row.col(|ui| {
@@ -158,9 +141,7 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
 
                         row.col(|ui| {
                             if ui.button("View").clicked() {
-                                state
-                                    .backend
-                                    .fetch_blob(ui.ctx(), &container.name, &blob.name);
+                                state.backend.fetch_blob(ui.ctx(), &container.name, blob);
                             };
                         });
                     })

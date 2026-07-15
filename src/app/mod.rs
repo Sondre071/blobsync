@@ -2,7 +2,7 @@ use crate::backend::Backend;
 use crate::shared::Shared;
 use crate::shared::account::Account;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::Arc;
 
 mod landing_screen;
@@ -35,13 +35,40 @@ struct MainState {
     current_container: Option<CurrentContainer>,
 
     displayed_blob: Option<Blob>,
-
-    blob_hashes: HashMap<String, HashSet<[u8; 16]>>,
 }
 
 struct CurrentContainer {
     name: String,
     blobs: Vec<Blob>,
+}
+
+impl CurrentContainer {
+    pub fn insert_new_blobs(&mut self, new_blobs: Vec<Blob>) {
+        let existing_blob_indices: HashMap<[u8; 16], usize> = self
+            .blobs
+            .iter()
+            .enumerate()
+            .map(|(index, blob)| (blob.md5, index))
+            .collect();
+
+        new_blobs.into_iter().for_each(|b| {
+            let blob_index = existing_blob_indices.get(&b.md5);
+
+            if let Some(index) = blob_index {
+                let existing_blob = &mut self.blobs[*index];
+
+                if existing_blob.location != Location::Synced
+                    && existing_blob.location != b.location
+                {
+                    // Due to there being only three states, the blob HAS to be synced now.
+
+                    existing_blob.location = Location::Synced;
+                };
+            } else {
+                self.blobs.push(b);
+            }
+        });
+    }
 }
 
 impl MainState {
@@ -53,7 +80,6 @@ impl MainState {
             containers: Vec::new(),
             current_container: None,
             displayed_blob: None,
-            blob_hashes: HashMap::new(),
         }
     }
 }
@@ -63,22 +89,22 @@ pub enum Message {
     Containers(Vec<String>),
     Blobs { container: String, blobs: Vec<Blob> },
     BlobWithBytes(Blob),
-    HashedFile { name: String, digest: md5::Digest },
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Blob {
-    name: String,
-    length: u64,
+    pub name: String,
+    pub length: u64,
     pub bytes: Option<Arc<[u8]>>,
     pub md5: [u8; 16],
     pub location: Location,
 }
 
-#[derive(Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Location {
-    Azure,
+    Remote,
     Local,
+    Synced,
 }
 
 impl Blob {

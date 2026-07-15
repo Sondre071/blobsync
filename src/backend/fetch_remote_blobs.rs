@@ -1,13 +1,12 @@
 use super::{Backend, Message};
 use crate::app::{Blob, Location};
-use crate::shared;
 
 use egui::Context;
 use futures::TryStreamExt;
 use std::sync::Arc;
 
 impl Backend {
-    pub(super) fn fetch_container(&self, ctx: &Context, container: &str) {
+    pub(super) fn fetch_remote_container(&self, ctx: &Context, container: &str) {
         let sender = self.sender.clone();
         let client = Arc::clone(&self.client);
         let container = container.to_owned();
@@ -44,56 +43,14 @@ impl Backend {
                         .try_into()
                         .expect("Failed to parse md5-hash into 16-byte uint.");
 
-                    let blob = Blob::new(name, length, None, content_md5, Location::Azure);
+                    let blob = Blob::new(name, length, None, content_md5, Location::Remote);
                     blobs.push(blob);
                 }
             }
 
             sender
                 .send(Message::Blobs { container, blobs })
-                .expect("Failed to fetch blobs.");
-
-            ctx.request_repaint();
-        });
-    }
-
-    pub fn fetch_blob(&self, ctx: &Context, container: &str, name: &str) {
-        let sender = self.sender.clone();
-        let client = Arc::clone(&self.client);
-        let container = container.to_owned();
-        let name = name.to_owned();
-        let ctx = ctx.clone();
-
-        shared::println!("%tFetching blob: %n{}/{}\n", container, name);
-
-        self.runtime.spawn(async move {
-            let response = client
-                .blob_client(&container, &name)
-                .download(None)
-                .await
-                .unwrap();
-
-            let bytes: Vec<u8> = response
-                .body
-                .collect()
-                .await
-                .expect("Failed to parse blob bytes.")
-                .to_vec();
-
-            let md5: [u8; 16] = response
-                .properties
-                .blob_content_md5
-                .expect("No md5-hash found for the file.")
-                .try_into()
-                .expect("Failed to parse md5-hash into 16-byte uint.");
-
-            let length = bytes.len() as u64;
-
-            let blob = Blob::new(name, length, Some(bytes), md5, Location::Azure);
-
-            sender
-                .send(Message::BlobWithBytes(blob))
-                .expect("Failed to download blob.");
+                .expect("Failed to fetch remote blobs.");
 
             ctx.request_repaint();
         });
