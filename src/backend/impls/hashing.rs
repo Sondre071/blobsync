@@ -14,7 +14,7 @@ impl Backend {
 
         if root.try_exists().is_err() {
             shared::println!(
-                "%tNo local folder found for container: '%n{}%t', returning.",
+                "%tNo local folder found for container: %n{}%t, returning.",
                 local_container_name
             );
 

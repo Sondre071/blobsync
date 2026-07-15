@@ -1,4 +1,4 @@
-use super::types::{CurrentContainer, Location, MainState, Message};
+use super::types::{Location, MainState, Message};
 
 use egui::Ui;
 use egui_extras::{Column, TableBuilder};

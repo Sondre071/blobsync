@@ -81,7 +81,7 @@ impl Backend {
             container.local_container(&self.account.local_path)
         else {
             shared::println!(
-                "%wNo local directory found for container: '%n{}%t', returning.",
+                "%wNo local directory found for container: %n{}%t, returning.",
                 &container.name
             );
 
@@ -187,7 +187,7 @@ impl Backend {
                         };
                     } else {
                         shared::println!(
-                            "%wNo local directory found for container: '%n{}%t', fetching from remote instead.",
+                            "%wNo local directory found for container: %n{}%t, fetching from remote instead.",
                             &remote_container_name
                         );
                     };

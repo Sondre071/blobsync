@@ -77,6 +77,11 @@ pub struct CurrentContainer {
 
 impl CurrentContainer {
     pub fn insert_new_blobs(&mut self, new_blobs: Vec<Blob>) {
+        if self.blobs.is_empty() {
+            self.blobs = new_blobs;
+            return;
+        };
+
         let existing_blob_indices: HashMap<[u8; 16], usize> = self
             .blobs
             .iter()
