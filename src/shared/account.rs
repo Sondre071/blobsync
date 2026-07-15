@@ -16,7 +16,8 @@ impl Shared {
         let file = fs::File::open(path).unwrap();
         let reader = std::io::BufReader::new(file);
 
-        let accounts_file: AccountsFile = serde_json::from_reader(reader).unwrap();
+        let accounts_file: AccountsFile =
+            serde_json::from_reader(reader).unwrap();
 
         accounts_file.accounts
     }
@@ -45,6 +46,7 @@ impl Account {
             self.name
         );
 
-        BlobServiceClient::new(url, None, None).expect("Unable to create blob service client.")
+        BlobServiceClient::new(url, None, None)
+            .expect("Unable to create blob service client.")
     }
 }

@@ -1,5 +1,5 @@
-use super::{Backend, Message};
-use crate::app::{Blob, CurrentContainer, Location};
+use crate::app::types::{Blob, CurrentContainer, Location};
+use crate::backend::{Backend, Message};
 use crate::shared;
 
 use egui::Context;
@@ -51,8 +51,13 @@ impl Backend {
                         .try_into()
                         .expect("Failed to parse md5-hash into 16-byte uint.");
 
-                    let blob =
-                        Blob::new(name, length, None, content_md5, Location::Remote);
+                    let blob = Blob::new(
+                        name,
+                        length,
+                        None,
+                        content_md5,
+                        Location::Remote,
+                    );
                     blobs.push(blob);
                 }
             }
@@ -111,7 +116,8 @@ impl Backend {
 
                 let digest = md5::compute(bytes);
 
-                let blob = Blob::new(name, length, None, digest.0, Location::Local);
+                let blob =
+                    Blob::new(name, length, None, digest.0, Location::Local);
                 blobs.push(blob);
             }
 
@@ -126,7 +132,12 @@ impl Backend {
         });
     }
 
-    pub fn dispatch_fetch_blob(&self, ctx: &Context, container: &str, blob: &Blob) {
+    pub fn dispatch_fetch_blob(
+        &self,
+        ctx: &Context,
+        container: &str,
+        blob: &Blob,
+    ) {
         let sender = self.sender.clone();
         let client = Arc::clone(&self.client);
         let container = container.to_owned();
@@ -161,8 +172,13 @@ impl Backend {
                 }
             };
 
-            let blob =
-                Blob::new(blob.name, blob.length, Some(bytes), blob.md5, blob.location);
+            let blob = Blob::new(
+                blob.name,
+                blob.length,
+                Some(bytes),
+                blob.md5,
+                blob.location,
+            );
 
             sender
                 .send(Message::BlobWithBytes(blob))

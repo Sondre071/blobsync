@@ -18,7 +18,7 @@ fn main() -> eframe::Result {
         options,
         Box::new(|cc| {
             egui_extras::install_image_loaders(&cc.egui_ctx);
-            Ok(Box::<app::App>::default())
+            Ok(Box::<app::types::App>::default())
         }),
     )
 }

@@ -1,12 +1,11 @@
-use crate::app::Message;
+use crate::app::types::Message;
 use crate::shared::account::Account;
 
 use azure_storage_blob::BlobServiceClient;
 use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender, channel};
 
-mod fetch_blobs;
-mod fetch_containers;
+mod impls;
 
 pub struct Backend {
     runtime: tokio::runtime::Runtime,

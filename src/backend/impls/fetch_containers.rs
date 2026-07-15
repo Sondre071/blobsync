@@ -1,4 +1,4 @@
-use super::{Backend, Message};
+use crate::backend::{Backend, Message};
 
 use futures::TryStreamExt;
 use std::sync::Arc;
