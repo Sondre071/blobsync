@@ -4,7 +4,7 @@ use crate::shared;
 
 use egui::Context;
 use futures::TryStreamExt;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::fs;
 use walkdir::WalkDir;
@@ -61,24 +61,35 @@ impl Backend {
     }
 
     pub(super) fn dispatch_fetch_local_blobs(&self, ctx: &Context, container: &str) {
-        let local_container_name = container.replace('-', "_");
-        let root = Path::new(&self.account.local_path).join(&local_container_name);
-        let sender = self.sender.clone();
-        let ctx = ctx.clone();
+        let remote_container_name = container.to_owned();
+        
+        let local_container: Option<(PathBuf, String)> = ["-", " ", "_"].iter().find_map(|char| {
+            let path = Path::new(&self.account.local_path).join(container.replace('-', char));
 
-        if root.try_exists().is_err() {
+            if path.try_exists().unwrap_or(false) {
+                let directory_name = path.file_name().unwrap().to_string_lossy().to_string();
+                Some((path, directory_name))
+            } else {
+                None
+            }
+        });
+
+        let Some((local_container_path, local_container_name)) = local_container else {
             shared::println!(
-                "%tNo local folder found for container: '%n{}%t', returning.",
-                local_container_name
+                "%wNo local directory found for container: '%n{}%t', returning.",
+                container
             );
 
             return;
-        }
+        };
+
+        let sender = self.sender.clone();
+        let ctx = ctx.clone();
 
         self.runtime.spawn_blocking(move || {
             let mut blobs = Vec::<Blob>::new();
 
-            for file in WalkDir::new(&root)
+            for file in WalkDir::new(&local_container_path)
                 .into_iter()
                 .filter_map(Result::ok)
                 .filter(|e| e.file_type().is_file())
@@ -106,7 +117,7 @@ impl Backend {
 
             sender
                 .send(Message::Blobs {
-                    container: local_container_name,
+                    container: remote_container_name,
                     blobs,
                 })
                 .expect("Failed to fetch local blobs.");
