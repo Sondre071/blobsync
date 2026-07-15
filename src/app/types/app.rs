@@ -132,7 +132,11 @@ impl CurrentContainer {
 #[derive(Debug)]
 pub enum Message {
     Containers(Vec<String>),
-    Blobs { container: String, blobs: Vec<Blob> },
+    Blobs {
+        container: String,
+        blobs: Vec<Blob>,
+        location: Location,
+    },
     BlobWithBytes(Blob),
 }
 

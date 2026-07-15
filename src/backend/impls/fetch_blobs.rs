@@ -7,6 +7,7 @@ use futures::TryStreamExt;
 use std::path::Path;
 use std::sync::Arc;
 use tokio::fs;
+use walkdir::DirEntry;
 use walkdir::WalkDir;
 
 impl Backend {
@@ -63,7 +64,11 @@ impl Backend {
             }
 
             sender
-                .send(Message::Blobs { container, blobs })
+                .send(Message::Blobs {
+                    container,
+                    blobs,
+                    location: Location::Remote,
+                })
                 .expect("Failed to fetch remote blobs.");
 
             ctx.request_repaint();
@@ -75,6 +80,8 @@ impl Backend {
         ctx: &Context,
         container: &CurrentContainer,
     ) {
+        const SIZE_THRESHOLD: u64 = 10 * 1024 * 1024;
+
         let remote_container_name = container.name.to_owned();
 
         let Some((local_container_name, local_container_path)) =
@@ -92,14 +99,35 @@ impl Backend {
         let ctx = ctx.clone();
 
         self.runtime.spawn_blocking(move || {
-            let mut blobs = Vec::<Blob>::new();
+            let mut small_files: Vec<DirEntry> = Vec::new();
+            let mut large_files: Vec<DirEntry> = Vec::new();
 
             for file in WalkDir::new(&local_container_path)
                 .into_iter()
                 .filter_map(Result::ok)
                 .filter(|e| e.file_type().is_file())
             {
-                // TODO: Stream byte reading and md5 hashing in case of large files.
+                let Ok(metadata) = file.metadata() else {
+                    let feedback = format!(
+                        "Failed to read file metadata: {}, container: {}",
+                        file.file_name().to_string_lossy(),
+                        &local_container_name
+                    );
+
+                    eprintln!("{}", feedback);
+                    continue;
+                };
+
+                if metadata.len() <= SIZE_THRESHOLD {
+                    small_files.push(file);
+                } else {
+                    large_files.push(file);
+                }
+            }
+
+            let mut small_batch = Vec::<Blob>::new();
+
+            for file in small_files.iter() {
                 let Ok(bytes) = std::fs::read(file.path()) else {
                     let feedback = format!(
                         "Failed to read file: {}, container: {}",
@@ -118,17 +146,54 @@ impl Backend {
 
                 let blob =
                     Blob::new(name, length, None, digest.0, Location::Local);
-                blobs.push(blob);
+                small_batch.push(blob);
             }
 
             sender
                 .send(Message::Blobs {
-                    container: remote_container_name,
-                    blobs,
+                    container: remote_container_name.clone(),
+                    blobs: small_batch,
+                    location: Location::Local,
                 })
                 .expect("Failed to fetch local blobs.");
 
             ctx.request_repaint();
+
+            for file in large_files.iter() {
+                let Ok(bytes) = std::fs::read(file.path()) else {
+                    let feedback = format!(
+                        "Failed to read file: {}, container: {}",
+                        file.file_name().to_string_lossy(),
+                        &local_container_name
+                    );
+
+                    eprintln!("{}", feedback);
+                    continue;
+                };
+
+                let length = bytes.len() as u64;
+                let name = file.file_name().to_string_lossy().to_string();
+
+                let digest = md5::compute(bytes);
+
+                let blob = vec![Blob::new(
+                    name,
+                    length,
+                    None,
+                    digest.0,
+                    Location::Local,
+                )];
+
+                sender
+                    .send(Message::Blobs {
+                        container: remote_container_name.clone(),
+                        blobs: blob,
+                        location: Location::Local,
+                    })
+                    .expect("Failed to fetch local blobs.");
+
+                ctx.request_repaint();
+            }
         });
     }
 

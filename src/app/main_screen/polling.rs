@@ -10,9 +10,14 @@ pub fn poll_for_messages(state: &mut MainState) {
 
                 state.containers = containers;
             }
-            Message::Blobs { container, blobs } => {
+            Message::Blobs {
+                container,
+                blobs,
+                location,
+            } => {
                 shared::println!("%mMessage received: %nBlobs");
-                shared::println!("%tContainer: %n{}", container,);
+                shared::println!("%tContainer: %n{}", container);
+                shared::println!("%tLocation: %n{}", location);
                 shared::println!("%tFile count: %d{}", blobs.len());
 
                 if let Some(current_container) = &mut state.current_container
