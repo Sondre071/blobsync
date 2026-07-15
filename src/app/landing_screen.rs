@@ -10,9 +10,7 @@ pub fn render_landing_screen(ui: &mut Ui, shared: &mut Shared) -> Option<Screen>
     for account in &shared.accounts {
         if ui.button(&account.name).clicked() {
             let main_state = Box::new(MainState::new(account));
-            main_state
-                .backend
-                .dispatch_fetch_remote_containers_list_message();
+            main_state.backend.dispatch_fetch_remote_containers_list();
 
             next = Some(Screen::Main(main_state));
         }

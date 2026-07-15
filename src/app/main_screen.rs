@@ -141,7 +141,9 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
 
                         row.col(|ui| {
                             if ui.button("View").clicked() {
-                                state.backend.fetch_blob(ui.ctx(), &container.name, blob);
+                                state
+                                    .backend
+                                    .dispatch_fetch_blob(ui.ctx(), &container.name, blob);
                             };
                         });
                     })

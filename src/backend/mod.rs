@@ -7,10 +7,8 @@ use std::sync::mpsc::{Receiver, Sender, channel};
 
 use egui::Context;
 
-mod fetch_blob;
-mod fetch_local_blobs;
-mod fetch_remote_blobs;
-mod fetch_remote_containers;
+mod fetch_blobs;
+mod fetch_containers;
 
 pub struct Backend {
     runtime: tokio::runtime::Runtime,
@@ -37,7 +35,7 @@ impl Backend {
     }
 
     pub fn switch_to_container(&self, ctx: &Context, container: &str) {
-        self.fetch_remote_container(ctx, container);
+        self.dispatch_fetch_remote_container(ctx, container);
         self.dispatch_fetch_local_blobs(ctx, container);
     }
 }

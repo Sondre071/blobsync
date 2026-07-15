@@ -4,7 +4,7 @@ use futures::TryStreamExt;
 use std::sync::Arc;
 
 impl Backend {
-    pub fn dispatch_fetch_remote_containers_list_message(&self) {
+    pub fn dispatch_fetch_remote_containers_list(&self) {
         let sender = self.sender.clone();
         let client = Arc::clone(&self.client);
 
