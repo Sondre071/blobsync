@@ -85,16 +85,13 @@ impl CurrentContainer {
             .collect();
 
         new_blobs.into_iter().for_each(|b| {
-            let blob_index = existing_blob_indices.get(&b.md5);
-
-            if let Some(index) = blob_index {
+            if let Some(index) = existing_blob_indices.get(&b.md5) {
                 let existing_blob = &mut self.blobs[*index];
 
                 if existing_blob.location != Location::Synced
                     && existing_blob.location != b.location
                 {
-                    // Due to there being only three states, the blob HAS to be synced now.
-
+                    // As there are only three states, the blob HAS to be synced now.
                     existing_blob.location = Location::Synced;
                 };
             } else {
