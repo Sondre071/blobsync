@@ -99,9 +99,7 @@ pub fn run_main_screen(ui: &mut Ui, state: &mut MainState) {
                 .body(|body| {
                     body.rows(row_height, container.blobs.len(), |mut row| {
                         let blob = &container.blobs[row.index()];
-                        
-                        let name: String = blob.name.chars().take(30).collect();
-                        
+
                         let status = match blob.location {
                             Location::Remote => "Remote",
                             Location::Local => "Local",
