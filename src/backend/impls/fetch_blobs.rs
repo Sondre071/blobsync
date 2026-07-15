@@ -135,41 +135,76 @@ impl Backend {
     pub fn dispatch_fetch_blob(
         &self,
         ctx: &Context,
-        container: &str,
+        container: &CurrentContainer,
         blob: &Blob,
     ) {
         let sender = self.sender.clone();
         let client = Arc::clone(&self.client);
-        let container = container.to_owned();
         let ctx = ctx.clone();
 
         let blob = blob.clone();
-        let local_root = Path::new(&self.account.local_path)
-            .join(&container)
-            .join(&blob.name);
+        let remote_container_name = container.name.to_owned();
+        let local_container =
+            container.local_container(&self.account.local_path);
 
-        shared::println!("%tFetching blob: %n{}/{}\n", container, blob.name);
+        shared::println!("%tFetching blob: %n{}/{}", container.name, blob.name);
 
         self.runtime.spawn(async move {
-            let bytes = {
-                if blob.location != Location::Remote {
-                    fs::read(local_root)
-                        .await
-                        .expect("Failed to read local file.")
-                } else {
-                    let response = client
-                        .blob_client(&container, &blob.name)
-                        .download(None)
-                        .await
-                        .unwrap();
+            shared::println!(
+                "%tBlob location: %n{}",
+                blob.location
+            );
 
-                    response
-                        .body
-                        .collect()
-                        .await
-                        .expect("Failed to read blob bytes.")
-                        .to_vec()
-                }
+            let bytes: Vec<u8> = 'bytes_block: {
+
+                if blob.location != Location::Remote {
+
+                    if let Some((_, container_path)) = local_container {
+                        let file_path = WalkDir::new(&container_path)
+                            .into_iter()
+                            .filter_map(Result::ok)
+                            .filter(|e| e.file_type().is_dir())
+                            .find_map(|e| {
+                                let path = Path::new(e.path()).join(&blob.name);
+
+                                if path.try_exists().unwrap_or(false) {
+                                    Some(path)
+                                } else {
+                                    None
+                                }
+                            });
+
+                        if let Some(valid_file_path) = file_path {
+                            let bytes = fs::read(valid_file_path)
+                                .await
+                                .expect("Failed to read local file.");
+
+                            break 'bytes_block bytes;
+                        } else {
+                            shared::println!(
+                                "%tBlob not found locally. Defaulting to remote",
+                            );
+                        };
+                    } else {
+                        shared::println!(
+                            "%wNo local directory found for container: '%n{}%t', fetching from remote instead.",
+                            &remote_container_name
+                        );
+                    };
+                };
+
+                let response = client
+                    .blob_client(&remote_container_name, &blob.name)
+                    .download(None)
+                    .await
+                    .unwrap();
+
+                response
+                    .body
+                    .collect()
+                    .await
+                    .expect("Failed to read blob bytes.")
+                    .to_vec()
             };
 
             let blob = Blob::new(
@@ -179,6 +214,8 @@ impl Backend {
                 blob.md5,
                 blob.location,
             );
+
+            println!();
 
             sender
                 .send(Message::BlobWithBytes(blob))

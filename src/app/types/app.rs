@@ -1,6 +1,6 @@
 use crate::backend::Backend;
+use crate::shared::Shared;
 use crate::shared::account::Account;
-use crate::shared::{self, Shared};
 
 use egui::Context;
 use std::collections::HashMap;
@@ -115,13 +115,6 @@ impl CurrentContainer {
                 let path = Path::new(local_account_path.as_ref())
                     .join(self.name.replace('-', char));
 
-                shared::println!(
-                    "testing: {} as {}",
-                    self.name,
-                    self.name.replace('-', char)
-                );
-                shared::println!("exists: {}", path.exists());
-
                 if path.try_exists().unwrap_or(false) {
                     let directory_name =
                         path.file_name().unwrap().to_string_lossy().to_string();
@@ -155,6 +148,12 @@ pub enum Location {
     Remote,
     Local,
     Synced,
+}
+
+impl std::fmt::Display for Location {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 impl Blob {

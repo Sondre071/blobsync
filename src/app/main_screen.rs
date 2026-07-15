@@ -118,7 +118,7 @@ pub fn run_main_screen(ui: &mut Ui, state: &mut MainState) {
                             if ui.button("View").clicked() {
                                 state.backend.dispatch_fetch_blob(
                                     ui.ctx(),
-                                    &container.name,
+                                    container,
                                     blob,
                                 );
                             };
