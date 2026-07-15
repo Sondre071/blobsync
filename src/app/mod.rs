@@ -1,8 +1,10 @@
 use crate::backend::Backend;
-use crate::shared::Shared;
 use crate::shared::account::Account;
+use crate::shared::{self, Shared};
 
+use egui::Context;
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 mod landing_screen;
@@ -37,8 +39,8 @@ struct MainState {
     displayed_blob: Option<Blob>,
 }
 
-struct CurrentContainer {
-    name: String,
+pub struct CurrentContainer {
+    pub name: String,
     blobs: Vec<Blob>,
 }
 
@@ -69,6 +71,36 @@ impl CurrentContainer {
             }
         });
     }
+
+    pub fn local_container(
+        &self,
+        local_account_path: impl AsRef<str>,
+    ) -> Option<(String, PathBuf)> {
+        let allowed_space_character_replacements = [" ", "-", "_"];
+
+        allowed_space_character_replacements
+            .iter()
+            .find_map(|char| {
+                let path = Path::new(local_account_path.as_ref())
+                    .join(self.name.replace('-', char));
+
+                shared::println!(
+                    "testing: {} as {}",
+                    self.name,
+                    self.name.replace('-', char)
+                );
+                shared::println!("exists: {}", path.exists());
+
+                if path.try_exists().unwrap_or(false) {
+                    let directory_name =
+                        path.file_name().unwrap().to_string_lossy().to_string();
+
+                    Some((directory_name, path))
+                } else {
+                    None
+                }
+            })
+    }
 }
 
 impl MainState {
@@ -81,6 +113,28 @@ impl MainState {
             current_container: None,
             displayed_blob: None,
         }
+    }
+
+    pub fn switch_to_container(
+        &mut self,
+        ctx: &Context,
+        container: impl AsRef<str>,
+    ) {
+        self.displayed_blob = None;
+
+        self.current_container = Some(CurrentContainer {
+            name: container.as_ref().to_owned(),
+            blobs: Vec::new(),
+        });
+
+        self.backend.dispatch_fetch_remote_container(
+            ctx,
+            self.current_container.as_ref().unwrap(),
+        );
+        self.backend.dispatch_fetch_local_blobs(
+            ctx,
+            self.current_container.as_ref().unwrap(),
+        );
     }
 }
 

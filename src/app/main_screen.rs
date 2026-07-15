@@ -59,15 +59,21 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
             egui::ScrollArea::vertical()
                 .auto_shrink(false)
                 .show(ui, |ui| {
-                    for container in state.containers.iter() {
-                        if ui.button(container).clicked() {
-                            state.backend.switch_to_container(ui.ctx(), container);
-                        }
+                    let clicked =
+                        state.containers.iter().find_map(|container| {
+                            ui.button(container)
+                                .clicked()
+                                .then(|| container.clone())
+                        });
+
+                    if let Some(container) = clicked {
+                        state.switch_to_container(ui, container);
                     }
                 });
         });
 
-    if let (Some(blob), Some(container)) = (&state.displayed_blob, &state.current_container)
+    if let (Some(blob), Some(container)) =
+        (&state.displayed_blob, &state.current_container)
         && let Some(bytes) = &blob.bytes
     {
         let max_width = (ui.available_width() - 460.0).max(0.0);
@@ -76,7 +82,10 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
         let image = egui::Image::from_bytes(uri, Arc::clone(bytes));
 
         let desired_size = image
-            .load_and_calc_size(ui, egui::vec2(max_width, ui.available_height()))
+            .load_and_calc_size(
+                ui,
+                egui::vec2(max_width, ui.available_height()),
+            )
             .map(|s| s.x.min(max_width))
             .unwrap_or(max_width);
 
@@ -91,7 +100,9 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
         if let Some(container) = &state.current_container {
             ui.add_sized(
                 [200.0, 25.0],
-                egui::Label::new(egui::RichText::new(&container.name).heading()),
+                egui::Label::new(
+                    egui::RichText::new(&container.name).heading(),
+                ),
             );
 
             ui.separator();
@@ -141,25 +152,28 @@ pub fn render_main_screen(ui: &mut Ui, state: &mut MainState) {
 
                         row.col(|ui| {
                             if ui.button("View").clicked() {
-                                state
-                                    .backend
-                                    .dispatch_fetch_blob(ui.ctx(), &container.name, blob);
+                                state.backend.dispatch_fetch_blob(
+                                    ui.ctx(),
+                                    &container.name,
+                                    blob,
+                                );
                             };
                         });
                     })
                 });
 
             if false {
-                egui::ScrollArea::vertical()
-                    .auto_shrink(false)
-                    .show(ui, |ui| {
+                egui::ScrollArea::vertical().auto_shrink(false).show(
+                    ui,
+                    |ui| {
                         egui::Grid::new("blob_table")
                             .striped(true)
                             .spacing(egui::Vec2::new(10.0, 8.0))
                             .show(ui, |ui| {
                                 ui.end_row();
                             });
-                    });
+                    },
+                );
             }
         }
     });

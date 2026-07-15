@@ -1,19 +1,23 @@
 use super::{Backend, Message};
-use crate::app::{Blob, Location};
+use crate::app::{Blob, CurrentContainer, Location};
 use crate::shared;
 
 use egui::Context;
 use futures::TryStreamExt;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
 use tokio::fs;
 use walkdir::WalkDir;
 
 impl Backend {
-    pub(super) fn dispatch_fetch_remote_container(&self, ctx: &Context, container: &str) {
+    pub fn dispatch_fetch_remote_container(
+        &self,
+        ctx: &Context,
+        container: &CurrentContainer,
+    ) {
         let sender = self.sender.clone();
         let client = Arc::clone(&self.client);
-        let container = container.to_owned();
+        let container = container.name.to_owned();
         let ctx = ctx.clone();
 
         self.runtime.spawn(async move {
@@ -47,7 +51,8 @@ impl Backend {
                         .try_into()
                         .expect("Failed to parse md5-hash into 16-byte uint.");
 
-                    let blob = Blob::new(name, length, None, content_md5, Location::Remote);
+                    let blob =
+                        Blob::new(name, length, None, content_md5, Location::Remote);
                     blobs.push(blob);
                 }
             }
@@ -60,24 +65,19 @@ impl Backend {
         });
     }
 
-    pub(super) fn dispatch_fetch_local_blobs(&self, ctx: &Context, container: &str) {
-        let remote_container_name = container.to_owned();
-        
-        let local_container: Option<(PathBuf, String)> = ["-", " ", "_"].iter().find_map(|char| {
-            let path = Path::new(&self.account.local_path).join(container.replace('-', char));
+    pub fn dispatch_fetch_local_blobs(
+        &self,
+        ctx: &Context,
+        container: &CurrentContainer,
+    ) {
+        let remote_container_name = container.name.to_owned();
 
-            if path.try_exists().unwrap_or(false) {
-                let directory_name = path.file_name().unwrap().to_string_lossy().to_string();
-                Some((path, directory_name))
-            } else {
-                None
-            }
-        });
-
-        let Some((local_container_path, local_container_name)) = local_container else {
+        let Some((local_container_name, local_container_path)) =
+            container.local_container(&self.account.local_path)
+        else {
             shared::println!(
                 "%wNo local directory found for container: '%n{}%t', returning.",
-                container
+                &container.name
             );
 
             return;
@@ -161,7 +161,8 @@ impl Backend {
                 }
             };
 
-            let blob = Blob::new(blob.name, blob.length, Some(bytes), blob.md5, blob.location);
+            let blob =
+                Blob::new(blob.name, blob.length, Some(bytes), blob.md5, blob.location);
 
             sender
                 .send(Message::BlobWithBytes(blob))
