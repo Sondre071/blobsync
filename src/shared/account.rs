@@ -38,8 +38,9 @@ pub struct Account {
 
 impl Account {
     pub fn new_blob_client(&self) -> BlobServiceClient {
-        let url = Url::parse(&format!("{}?{}", self.blob_endpoint, self.sas))
-            .expect("Unable to parse URL.");
+        let url =
+            Url::parse(format!("{}?{}", self.blob_endpoint, self.sas).as_ref())
+                .expect("Unable to parse URL.");
 
         shared::println!(
             "%tInitializing new client for storage account: %n{}\n",

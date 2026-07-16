@@ -1,14 +1,10 @@
-use super::types::{Location, MainState, Message};
+use crate::app::types::{Location, MainState};
 
 use egui::Ui;
 use egui_extras::{Column, TableBuilder};
 use std::sync::Arc;
 
-mod polling;
-
-pub fn run_main_screen(ui: &mut Ui, state: &mut MainState) {
-    polling::poll_for_messages(state);
-
+pub fn render(ui: &mut Ui, state: &mut MainState) {
     let heading_height = ui.text_style_height(&egui::TextStyle::Heading);
     let row_height = ui.text_style_height(&egui::TextStyle::Body) + 4.0;
 

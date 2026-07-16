@@ -1,7 +1,5 @@
 use crate::backend::Backend;
-use crate::shared;
-use crate::shared::Shared;
-use crate::shared::account::Account;
+use crate::shared::{self, Shared, account::Account};
 
 use egui::Context;
 use std::collections::HashMap;
@@ -157,8 +155,8 @@ pub struct Blob {
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Location {
-    Remote,
     Local,
+    Remote,
     Synced,
 }
 

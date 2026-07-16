@@ -1,9 +1,9 @@
-use super::types::{MainState, Screen};
+use crate::app::types::{MainState, Screen};
 use crate::shared::Shared;
 
 use egui::Ui;
 
-pub fn run_landing_screen(ui: &mut Ui, shared: &mut Shared) -> Option<Screen> {
+pub fn render(ui: &mut Ui, shared: &mut Shared) -> Option<Screen> {
     let mut next: Option<Screen> = None;
 
     for account in &shared.accounts {

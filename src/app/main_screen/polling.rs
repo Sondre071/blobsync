@@ -1,4 +1,4 @@
-use super::{MainState, Message};
+use crate::app::types::{MainState, Message};
 use crate::shared;
 
 pub fn poll_for_messages(state: &mut MainState) {
