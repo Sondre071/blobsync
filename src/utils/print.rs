@@ -3,7 +3,6 @@ pub const NAME_COLOR: &str = "\x1b[1;33m";
 pub const DATA_COLOR: &str = "\x1b[1;37m";
 pub const MESSAGE_COLOR: &str = "\x1b[1;36m";
 pub const WARNING_COLOR: &str = "\x1b[1;33m";
-
 pub const RESET_STYLE: &str = "\x1b[0m";
 
 #[macro_export]

@@ -1,4 +1,4 @@
-use crate::app::types::Backend;
+use crate::backend::Backend;
 use crate::utils::{self, Shared, account::Account};
 
 use egui::Context;
