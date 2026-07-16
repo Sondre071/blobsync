@@ -1,12 +1,12 @@
 use crate::app::types::{MainState, Message};
-use crate::shared;
+use crate::utils;
 
 pub fn poll_for_messages(state: &mut MainState) {
     while let Ok(msg) = state.backend.receiver.try_recv() {
         match msg {
             Message::Containers(containers) => {
-                shared::println!("%mMessage received: %nContainers%t");
-                shared::println!("Container count: %d{0}", containers.len());
+                utils::println!("%mMessage received: %nContainers%t");
+                utils::println!("Container count: %d{0}", containers.len());
 
                 state.containers = containers;
             }
@@ -15,24 +15,24 @@ pub fn poll_for_messages(state: &mut MainState) {
                 blobs,
                 location,
             } => {
-                shared::println!("%mMessage received: %nBlobs");
-                shared::println!("%tContainer: %n{}", container);
-                shared::println!("%tLocation: %n{}", location);
-                shared::println!("%tFile count: %d{}", blobs.len());
+                utils::println!("%mMessage received: %nBlobs");
+                utils::println!("%tContainer: %n{}", container);
+                utils::println!("%tLocation: %n{}", location);
+                utils::println!("%tFile count: %d{}", blobs.len());
 
                 if let Some(current_container) = &mut state.current_container
                     && current_container.name == container
                 {
                     current_container.insert_new_blobs(blobs);
                 } else {
-                    shared::println!(
+                    utils::println!(
                         "%wContainer not currently selected. Disregarding the result."
                     );
                 }
             }
             Message::BlobWithBytes(blob) => {
-                shared::println!("%mMessage received: %nBlobBytes");
-                shared::println!("%tFile: %n{}", blob.name);
+                utils::println!("%mMessage received: %nBlobBytes");
+                utils::println!("%tFile: %n{}", blob.name);
 
                 state.displayed_blob = Some(blob);
             }

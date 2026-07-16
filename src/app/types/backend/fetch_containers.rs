@@ -1,4 +1,4 @@
-use crate::backend::{Backend, Message};
+use crate::app::types::{Backend, Message};
 
 use futures::TryStreamExt;
 use std::sync::Arc;

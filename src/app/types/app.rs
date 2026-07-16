@@ -1,5 +1,5 @@
-use crate::backend::Backend;
-use crate::shared::{self, Shared, account::Account};
+use crate::app::types::Backend;
+use crate::utils::{self, Shared, account::Account};
 
 use egui::Context;
 use std::collections::HashMap;
@@ -67,7 +67,7 @@ impl MainState {
             self.current_container.as_ref().unwrap(),
         );
 
-        shared::println!(
+        utils::println!(
             "%tCurrent container set to: %n{}\n",
             container.as_ref()
         );

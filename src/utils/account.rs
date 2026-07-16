@@ -1,5 +1,5 @@
 use super::Shared;
-use crate::shared;
+use crate::utils;
 
 use std::{env, fs};
 
@@ -42,7 +42,7 @@ impl Account {
             Url::parse(format!("{}?{}", self.blob_endpoint, self.sas).as_ref())
                 .expect("Unable to parse URL.");
 
-        shared::println!(
+        utils::println!(
             "%tInitializing new client for storage account: %n{}\n",
             self.name
         );

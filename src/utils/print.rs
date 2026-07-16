@@ -12,13 +12,13 @@ macro_rules! println {
             #[cfg(debug_assertions)]
             {
                 let text = format!($($arg)*)
-                .replace("%n", $crate::shared::print::NAME_COLOR)
-                .replace("%d", $crate::shared::print::DATA_COLOR)
-                .replace("%t", $crate::shared::print::TEXT_COLOR)
-                .replace("%m", $crate::shared::print::MESSAGE_COLOR)
-                .replace("%w", $crate::shared::print::WARNING_COLOR);
+                .replace("%n", $crate::utils::print::NAME_COLOR)
+                .replace("%d", $crate::utils::print::DATA_COLOR)
+                .replace("%t", $crate::utils::print::TEXT_COLOR)
+                .replace("%m", $crate::utils::print::MESSAGE_COLOR)
+                .replace("%w", $crate::utils::print::WARNING_COLOR);
 
-                std::println!("{text}{}", $crate::shared::print::RESET_STYLE);
+                std::println!("{text}{}", $crate::utils::print::RESET_STYLE);
             }
         }}
 }

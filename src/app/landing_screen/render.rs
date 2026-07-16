@@ -1,5 +1,5 @@
 use crate::app::types::{MainState, Screen};
-use crate::shared::Shared;
+use crate::utils::Shared;
 
 use egui::Ui;
 

@@ -1,6 +1,5 @@
-use crate::app::types::{Blob, CurrentContainer, Location};
-use crate::backend::{Backend, Message};
-use crate::shared;
+use crate::app::types::{Backend, Blob, CurrentContainer, Location, Message};
+use crate::utils;
 
 use egui::Context;
 use futures::TryStreamExt;
@@ -87,7 +86,7 @@ impl Backend {
         let Some((local_container_name, local_container_path)) =
             container.local_container(&self.account.local_path)
         else {
-            shared::println!(
+            utils::println!(
                 "%wNo local directory found for container: %n{}%t, returning.",
                 &container.name
             );
@@ -212,10 +211,10 @@ impl Backend {
         let local_container =
             container.local_container(&self.account.local_path);
 
-        shared::println!("%tFetching blob: %n{}/{}", container.name, blob.name);
+        utils::println!("%tFetching blob: %n{}/{}", container.name, blob.name);
 
         self.runtime.spawn(async move {
-            shared::println!(
+            utils::println!(
                 "%tLocation status: %n{}",
                 blob.location
             );
@@ -246,12 +245,12 @@ impl Backend {
 
                             break 'bytes_block bytes;
                         } else {
-                            shared::println!(
+                            utils::println!(
                                 "%tBlob not found locally. Defaulting to remote",
                             );
                         };
                     } else {
-                        shared::println!(
+                        utils::println!(
                             "%wNo local directory found for container: %n{}%t, fetching from remote instead.",
                             &remote_container_name
                         );
